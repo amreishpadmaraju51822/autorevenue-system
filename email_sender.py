@@ -11,6 +11,9 @@ from typing import Optional
 
 class AutoRevenueEmailSender:
     def __init__(self):
+        self.client_id = os.getenv('GMAIL_CLIENT_ID')
+        self.client_secret = os.getenv('GMAIL_CLIENT_SECRET')
+        self.refresh_token = os.getenv('GMAIL_REFRESH_TOKEN')
         self.recipient_email = "amreishpadmaraju001@gmail.com"
         self.backup_email = "amreish.padmaraju@rehabilityuk.co.uk"  # Backup email
         self.sent_emails = []
