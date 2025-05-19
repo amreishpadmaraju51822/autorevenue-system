@@ -1,0 +1,54 @@
+# 🤖 AutoRevenue Professional GitHub Actions Workflow
+# Runs every 10 minutes to detect opportunities and send email alerts
+
+name: AutoRevenue Professional Monitor
+
+on:
+  # Run every 10 minutes
+  schedule:
+    - cron: '*/10 * * * *'
+  
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  monitor-opportunities:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Checkout the repository
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+    
+    # Set up Python environment
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    # Install required packages
+    - name: 📦 Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+    
+    # Run the AutoRevenue monitoring system
+    - name: 🔍 Run AutoRevenue Monitor
+      env:
+        GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+        GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+        GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+        GITHUB_ACTIONS: true
+      run: |
+        echo "🚀 Starting AutoRevenue Professional Monitor"
+        echo "⏰ Time: $(date)"
+        echo "📧 Email alerts enabled"
+        echo "🔍 Scanning for opportunities..."
+        python autorevenue_monitor.py
+        echo "✅ Scan completed"
+    
+    # Log the completion
+    - name: 📊 Log Completion
+      run: |
+        echo "🎯 AutoRevenue scan completed at $(date)"
+        echo "📈 System running in GitHub Actions"
