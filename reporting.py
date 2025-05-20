@@ -10,6 +10,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 import os.path
 import datetime
+from typing import List, Dict, Any, Optional
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
