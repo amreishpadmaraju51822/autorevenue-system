@@ -10,6 +10,7 @@ from data_acquisition import run_all_scanners
 from intelligence_analyzer import analyze_tenders_for_companies
 from reporting import send_reports
 from config import LOG_LEVEL
+from discord_sender import send_opportunity_alerts, send_system_startup, send_error_alert
 
 logger = logging.getLogger(__name__)
 
@@ -70,16 +71,33 @@ class SystemOrchestrator:
             for company_name in COMPANY_PROFILES.keys():
                 analyzed_data_by_company[company_name] = []
 
-
         # 3. Reporting
-        logger.info("Phase 3: Generating and sending reports...")
-        try:
-            # Send reports even if analyzed_data_by_company is empty for some/all companies
-            # The reporting module should handle the "no new opportunities" case gracefully.
-            send_reports(analyzed_data_by_company)
-            logger.info("Reporting phase complete.")
-        except Exception as e:
-            logger.error(f"Critical error during reporting phase: {e}", exc_info=True)
+        logger.info("Phase 3: Generating and sending Discord alerts...")
+        webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
+        if not webhook_url:
+            logger.warning("DISCORD_WEBHOOK_URL not set. Cannot send alerts.")
+        else:
+            try:
+        # First check if this is the first run (no alerts sent before)
+                if not hasattr(self, '_discord_startup_sent'):
+                    send_system_startup(webhook_url)
+                    self._discord_startup_sent = True
+            
+        # Send alerts for each company
+                alerts_sent = 0
+                for company_name, opportunities in analyzed_data_by_company.items():
+                    if send_opportunity_alerts(webhook_url, company_name, opportunities):
+                        alerts_sent += 1
+                
+                logger.info(f"Discord alerts sent: {alerts_sent}")
+                logger.info("Reporting phase complete.")
+            except Exception as e:
+                logger.error(f"Critical error during reporting phase: {e}", exc_info=True)
+        # Try to send error alert
+                try:
+                    send_error_alert(webhook_url, str(e))
+                except:
+                    pass
             # Log error, but cycle is considered complete.
 
         end_time = time.time()
