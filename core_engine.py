@@ -5,7 +5,7 @@ Orchestrates data acquisition, analysis, and reporting.
 """
 import logging
 import time
-
+import os
 from data_acquisition import run_all_scanners
 from intelligence_analyzer import analyze_tenders_for_companies
 from reporting import send_reports
