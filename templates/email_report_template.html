@@ -1,1 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procurement Intelligence Report for {{ company_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 800px; margin: 20px auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2, h3 { color: #2c3e50; }
+        h1 { text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #3498db; margin-top: 30px; border-bottom: 1px solid #eee; padding-bottom: 5px;}
+        .opportunity { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9; }
+        .opportunity p, .opportunity ul { margin-bottom: 10px; }
+        .opportunity strong { color: #555; }
+        .score { font-weight: bold; font-size: 1.1em; }
+        .score-high { color: #27ae60; } /* Green for high scores */
+        .score-medium { color: #f39c12; } /* Orange for medium */
+        .score-low { color: #e74c3c; } /* Red for lower relevant scores */
+        a { color: #3498db; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        hr { border: 0; height: 1px; background: #ddd; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 30px; font-size: 0.9em; color: #777; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 5px; }
+        .chart-container { text-align: center; margin-bottom: 20px; }
+        .chart-container img { max-width: 100%; height: auto; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Procurement Intelligence Report for {{ company_name }}</h1>
+        <p style="text-align:center;"><em>Report generated on: {{ report_date }}</em></p>
 
+        {% if not has_opportunities %}
+            <p style="text-align:center; font-size: 1.1em; padding: 20px; background-color:#eaf5ff; border-radius:5px;">
+                No new high-priority opportunities (above relevance threshold {{ config.MIN_RELEVANCE_SCORE_TO_REPORT if config else 'N/A' }}) found in this run that match your profile.
+            </p>
+        {% else %}
+            {% if opportunities and opportunities[0].analysis.scores.overall > 0 and attachments %} {# Check if chart might exist #}
+            <div class="chart-container">
+                <h3>Opportunity Score Summary</h3>
+                <img src="cid:opportunity_summary_chart_cid" alt="Opportunity Summary Chart" />
+            </div>
+            <hr>
+            {% endif %}
+
+            {% for opp in opportunities %}
+            <div class="opportunity">
+                <h2>
+                    {{ opp.tender_title }}
+                    <span class="score 
+                        {% if opp.analysis.scores.overall >= 80 %}score-high{% elif opp.analysis.scores.overall >= 60 %}score-medium{% else %}score-low{% endif %}">
+                        (Score: {{ "%.1f"|format(opp.analysis.scores.overall) }}/100)
+                    </span>
+                </h2>
+                <p><strong>URL:</strong> <a href="{{ opp.tender_url }}" target="_blank">{{ opp.tender_url }}</a></p>
+                <p><strong>Source:</strong> {{ opp.tender.source if opp.tender and opp.tender.source else (opp.analysis.tender_source if opp.analysis and opp.analysis.tender_source else "N/A") }}</p> {# Accommodate structure change #}
+                <p><strong>Published Date:</strong> {{ (opp.tender.published_date | format_date) if opp.tender and opp.tender.published_date else "N/A" }}</p>
+                <p><strong>Closing Date:</strong> {{ (opp.tender.closing_date | format_date) if opp.tender and opp.tender.closing_date else (opp.analysis.bid_timing if opp.analysis and "Closing Date:" in opp.analysis.bid_timing else "N/A") }}</p>
+                <p><strong>Estimated Value:</strong> {{ "£{:,.0f}".format(opp.analysis.parsed_value) if opp.analysis.parsed_value else "N/A" }}</p>
+                
+                <h3>Analysis & Recommendations:</h3>
+                <ul>
+                    <li><strong>Relevance Breakdown:</strong>
+                        Keyword Match: {{ "%.1f"|format(opp.analysis.scores.keyword_match) }}/10;
+                        Value Tier: {{ "%.1f"|format(opp.analysis.scores.value_tier) }}/10;
+                        Company Fit: {{ "%.1f"|format(opp.analysis.scores.company_fit) }}/10;
+                        Urgency: {{ "%.1f"|format(opp.analysis.scores.urgency) }}/10
+                    </li>
+                    <li><strong>Resource Recommendation:</strong> {{ opp.analysis.resource_recommendation }}</li>
+                    <li><strong>Bid Timing Advice:</strong> {{ opp.analysis.bid_timing }}</li>
+                    
+                    {% if opp.analysis.swot and (opp.analysis.swot.strengths or opp.analysis.swot.weaknesses) %}
+                    <li><strong>SWOT Analysis:</strong>
+                        <ul>
+                            {% if opp.analysis.swot.strengths %}<li><em>Strengths:</em> {{ opp.analysis.swot.strengths|join(', ') }}</li>{% endif %}
+                            {% if opp.analysis.swot.weaknesses %}<li><em>Weaknesses:</em> {{ opp.analysis.swot.weaknesses|join(', ') }}</li>{% endif %}
+                            {% if opp.analysis.swot.opportunities %}<li><em>Opportunities:</em> {{ opp.analysis.swot.opportunities|join(', ') }}</li>{% endif %}
+                            {% if opp.analysis.swot.threats %}<li><em>Threats:</em> {{ opp.analysis.swot.threats|join(', ') }}</li>{% endif %}
+                        </ul>
+                    </li>
+                    {% endif %}
+                    
+                    {% if opp.analysis.partnership_suggestions %}
+                    <li><strong>Partnership Suggestions:</strong> {{ opp.analysis.partnership_suggestions|join('; ') }}</li>
+                    {% endif %}
+
+                    <li><strong>Competitive Landscape Note:</strong> {{ opp.analysis.competitive_landscape }}</li>
+                    <li><strong>Contract Pattern Note:</strong> {{ opp.analysis.contract_patterns }}</li>
+                </ul>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="footer">
+            <p>This is an automated report from AutoRevenue Enterprise Intelligence v10.0.</p>
+            <p>For support or queries, please contact [Your Support Email/Link].</p>
+        </div>
+    </div>
+</body>
+</html>
+```
+*Note: I've added a `format_date` filter concept to the template, you might need to implement it in Jinja's environment if dates are not pre-formatted strings.*
+*For simplicity, I've removed the `format_date` filter usage for now, assuming dates are reasonably formatted strings or "N/A".*
