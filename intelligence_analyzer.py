@@ -349,7 +349,7 @@ def analyze_tenders_for_companies(tenders: List[Tender]) -> Dict[str, List[Dict[
 
 
 # Functions requiring historical data (conceptual, need DB integration)
-def detect_contract_patterns(company: CompanyProfile, historical_tenders_db_path: str = PROCESSED_TENDERS_DB_PATH) -> str:
+def detect_contract_patterns(company: CompanyProfile, historical_tenders_db_path: str = "data/processed_tenders.db") -> str:
     """
     Analyzes historical tender data for patterns relevant to the company.
     This is a conceptual implementation. Needs access to a populated tender database.
@@ -383,7 +383,7 @@ def detect_contract_patterns(company: CompanyProfile, historical_tenders_db_path
     return "Contract pattern detection module is conceptual and requires historical data analysis."
 
 
-def map_competitive_landscape(company: CompanyProfile, historical_tenders_db_path: str = PROCESSED_TENDERS_DB_PATH) -> str:
+def map_competitive_landscape(company: CompanyProfile, historical_tenders_db_path: str = "data/processed_tenders.db") -> str:
     """
     Provides a high-level overview of the competitive landscape.
     Conceptual: Would need data on awarded contracts and bidder information.
