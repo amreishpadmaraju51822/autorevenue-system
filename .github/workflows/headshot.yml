@@ -3,51 +3,51 @@ name: Run HEADSHOT Opportunity Hunter
 on:
   schedule:
     - cron: '0 */8 * * *'  # Run every 8 hours
-  workflow_dispatch:  # Allow manual triggering
+  workflow_dispatch:      # Allow manual triggering
 
 jobs:
   headshot:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
-      
+        uses: actions/checkout@v4 # Updated
+
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5 # Updated
         with:
           python-version: '3.9'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4
-      
+
       - name: Create data directory
         run: mkdir -p data
-      
+
       - name: Download previous database
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4 # Updated
         with:
           name: headshot-database
           path: data/
-        continue-on-error: true
-      
+        continue-on-error: true # This is good, as the artifact might not exist on the first run
+
       - name: Run HEADSHOT Agent
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GITHUB_TOKEN is automatically available, but setting it as env var doesn't hurt if your script expects it.
         run: python headshot_agent.py
-      
+
       - name: Upload database
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4 # Updated
         with:
           name: headshot-database
-          path: data/
+          path: data/headshot_vault.db # Be specific with the file to upload if it's just one
           retention-days: 90
-      
+
       - name: Upload opportunity reports
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4 # Updated
         with:
           name: headshot-opportunities
           path: data/headshot_opportunities.csv
