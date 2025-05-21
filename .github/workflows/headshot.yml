@@ -1,0 +1,54 @@
+name: Run HEADSHOT Opportunity Hunter
+
+on:
+  schedule:
+    - cron: '0 */8 * * *'  # Run every 8 hours
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  headshot:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4
+      
+      - name: Create data directory
+        run: mkdir -p data
+      
+      - name: Download previous database
+        uses: actions/download-artifact@v2
+        with:
+          name: headshot-database
+          path: data/
+        continue-on-error: true
+      
+      - name: Run HEADSHOT Agent
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python headshot_agent.py
+      
+      - name: Upload database
+        uses: actions/upload-artifact@v2
+        with:
+          name: headshot-database
+          path: data/
+          retention-days: 90
+      
+      - name: Upload opportunity reports
+        uses: actions/upload-artifact@v2
+        with:
+          name: headshot-opportunities
+          path: data/headshot_opportunities.csv
+          retention-days: 90
