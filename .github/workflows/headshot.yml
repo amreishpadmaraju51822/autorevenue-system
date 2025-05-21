@@ -1,53 +1,56 @@
-name: Run HEADSHOT Opportunity Hunter
+name: Run ADVANCED HEADSHOT Opportunity Hunter
 
 on:
   schedule:
-    - cron: '0 */8 * * *'  # Run every 8 hours
-  workflow_dispatch:      # Allow manual triggering
+    - cron: '0 */12 * * *'  # Run every 12 hours (less frequent due to more intensive processing)
+  workflow_dispatch:
 
 jobs:
   headshot:
     runs-on: ubuntu-latest
+    timeout-minutes: 45 # Increased timeout for potentially longer run
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4 # Updated
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5 # Updated
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.9' # spaCy works well with 3.9+
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4
+          pip install requests beautifulsoup4 feedparser spacy==3.7.2 # Pinned spaCy for model compatibility
+          # Download the spaCy English model
+          python -m spacy download en_core_web_sm
 
       - name: Create data directory
         run: mkdir -p data
 
       - name: Download previous database
-        uses: actions/download-artifact@v4 # Updated
+        uses: actions/download-artifact@v4
         with:
           name: headshot-database
           path: data/
-        continue-on-error: true # This is good, as the artifact might not exist on the first run
+        continue-on-error: true
 
       - name: Run HEADSHOT Agent
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GITHUB_TOKEN is automatically available, but setting it as env var doesn't hurt if your script expects it.
+          # GITHUB_TOKEN is automatically available to the runner
         run: python headshot_agent.py
 
       - name: Upload database
-        uses: actions/upload-artifact@v4 # Updated
+        uses: actions/upload-artifact@v4
         with:
           name: headshot-database
-          path: data/headshot_vault.db # Be specific with the file to upload if it's just one
+          path: data/headshot_vault.db
           retention-days: 90
 
       - name: Upload opportunity reports
-        uses: actions/upload-artifact@v4 # Updated
+        uses: actions/upload-artifact@v4
         with:
           name: headshot-opportunities
           path: data/headshot_opportunities.csv
